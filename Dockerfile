@@ -9,12 +9,6 @@ RUN mkdir -p /data/keepalived && cd /data && apt-get install -y wget \
     && cd keepalived && apt-get install -y gcc && apt-get install -y libssl-dev && apt-get -y install libpopt-dev \
     && ./configure && apt-get install -y make && make && make install
 
-RUN apt-get install -y locales locales-all
-RUN echo "LC_ALL=en_US.UTF-8" >> /etc/environment
-RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
-RUN echo "LANG=en_US.UTF-8" > /etc/locale.conf
-RUN locale-gen en_US.UTF-8
-
 # entrypoint
 COPY docker-entrypoint-override.sh /
 RUN chmod +x /docker-entrypoint-override.sh
