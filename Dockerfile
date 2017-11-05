@@ -5,9 +5,14 @@ RUN apt-get install -y gettext
 
 # install keepalived
 RUN mkdir -p /data/keepalived && cd /data && apt-get install -y wget \
-    && wget http://www.keepalived.org/software/keepalived-1.3.9.tar.gz &&  tar xf keepalived-1.3.9.tar.gz -C keepalived --strip-components 1 \
+    && wget http://www.keepalived.org/software/keepalived-1.3.9.tar.gz && tar xf keepalived-1.3.9.tar.gz -C keepalived --strip-components 1 \
     && cd keepalived && apt-get install -y gcc && apt-get install -y libssl-dev && apt-get -y install libpopt-dev \
     && ./configure && apt-get install -y make && make && make install
+
+# reduce image size
+RUN cd /data && rm keepalived-1.3.9.tar.gz && apt-get remove -y wget \
+    && apt-get remove -y gcc && apt-get remove -y libssl-dev && apt-get remove -y libpopt-dev \
+    && apt-get remove -y make
 
 # entrypoint
 COPY docker-entrypoint-override.sh /
