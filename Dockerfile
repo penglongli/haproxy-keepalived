@@ -9,11 +9,6 @@ RUN mkdir -p /data/keepalived && cd /data && apt-get install -y wget \
     && cd keepalived && apt-get install -y gcc && apt-get install -y libssl-dev && apt-get -y install libpopt-dev \
     && ./configure && apt-get install -y make && make && make install
 
-# reduce image size
-RUN cd /data && rm keepalived-1.3.9.tar.gz && apt-get remove -y wget \
-    && apt-get remove -y gcc && apt-get remove -y libssl-dev && apt-get remove -y libpopt-dev \
-    && apt-get remove -y make
-
 # entrypoint
 COPY docker-entrypoint-override.sh /
 RUN chmod +x /docker-entrypoint-override.sh
@@ -33,6 +28,3 @@ RUN chmod +x /keepalived/init_keepalived_conf.sh
 
 # Override haproxy's entrypoint
 ENTRYPOINT ["/docker-entrypoint-override.sh"]
-
-# CMD
-CMD ["haproxy", "-f", "/usr/local/etc/haproxy/haproxy.cfg"]

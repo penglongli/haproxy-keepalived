@@ -4,34 +4,50 @@ set -e
 trap "stop; exit 0;" SIGTERM SIGINT
 # handler for SIGINT & SIGITEM
 stop() {
-  echo "SIGTERM caught, terminating <haproxy & keepalived> process..."
+    echo "SIGTERM caught, terminating <haproxy & keepalived> process..."
 
-  # terminate haproxy
-  h_pid=$(pidof haproxy)
+    # terminate haproxy
+    h_pid=$(pidof haproxy)
 
-  kill -TERM $h_pid > /dev/null 2>&1
-  echo "HAProxy had terminated."
+    kill -TERM $h_pid > /dev/null 2>&1
+    echo "HAProxy had terminated."
 
-  # terminate keepalived
-  kill -TERM $(cat /var/run/vrrp.pid)
-  kill -TERM $(cat /var/run/keepalived.pid)
-  echo "Keepalived had terminated."
+    # terminate keepalived
+    k_pid=$(pidof keepalived)
 
-  echo "haproxy-keepalived service instance is successfuly terminated!"
+    kill -TERM $k_pid > /dev/null 2>&1
+    echo "Keepalived had terminated."
+
+    echo "haproxy-keepalived service instance is successfuly terminated!"
 }
 
-# init haproxy & keepalived conf
-/bin/bash -c /haproxy/haproxy_cfg_init.sh
-/bin/bash -c /keepalived/init_keepalived_conf.sh
+mode_env() {
+    # init haproxy
+    /bin/bash -c /haproxy/haproxy_cfg_init.sh
+
+    # if $HAPROXY_ONLY is not true, init keepalived conf (default is null)
+    if [ "$HAPROXY_ONLY" != true ]; then
+        # init keepalived
+        /bin/bash -c /keepalived/init_keepalived_conf.sh
+    fi
+}
+
+# If mode is null or error value
+if [ ! -n "$MODE" or "$MODE" = "ENV"  ]; then
+    eval mode_env
+fi
 
 # exec haproxy entrypoint
 exec /docker-entrypoint.sh "$@" &
 
-# start keepalived
-exec /start_keepalived.sh "$@" &
+# if $HAPROXY_ONLY is not true, start keepalived
+if [ "$HAPROXY_ONLY" != true ]; then
+    # start keepalived
+    exec /start_keepalived.sh "$@" &
+fi
 
 # wait <haproxy & keepalived> service started
-sleep 10
+sleep 5
 
 while true; do
   h_pid=$(pidof haproxy)
@@ -49,4 +65,3 @@ wait $h_pid
 echo "Haproxy service is no longer running, exiting..."
 
 exit 0;
-
