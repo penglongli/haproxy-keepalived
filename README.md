@@ -1,7 +1,7 @@
 # haproxy-keepalived
-> If you want to use this image, you had better learned some of Docker、HAProxy、Keepalived, perhaps some Bash shell knowledge.
+> If you want to use this image, you had better learned some of Docker、HAProxy、Keepalived, perhaps some Bash shell knowledge.
 
-## Intro
+## Introduction
 Glad you can see this repo. If you are looking for an image that combine HAProxy and Keepalived, this repo can help you archieve this goal. 
 
 `HAProxy` is used to setup a Load Balancer for TCP/HTTP applications. And `Keepalived` provides the characteristic of High-Availability for our `HAProxy` service.
