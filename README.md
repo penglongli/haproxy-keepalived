@@ -78,7 +78,7 @@ services:
 From above, we add some envs rather than use docker volumes. Below is the meaning of above environment variables:
 - KEEPALIVED_STATE: Start-up default state
 - KEEPALIVED_INTERFACE: Keepalived Binding interface
-- KEEPALIVED_PRIORITY: Keepalived node priority
+- KEEPALIVED_PRIORITY: Keepalived node priority
 - KEEPALIVED_V_ROUTER_ID: String identifying router
 - KEEPALIVED_VIP: Virtual ip
 - haproxy_item1: haproxy's item, can haproxy_item2、haproxy_item3、haproxy_item4, for custom your own haproxy-conf
@@ -86,7 +86,7 @@ From above, we add some envs rather than use docker volumes. Below is the meanin
 ## Extend
 In this image, it extends a feature. If you want to use HAProxy only rather than `haproxy & keepalived`, you can set `HAPROXY_ONLY=true` in docker env.
 
-## Discuss
+## Discuss
 If you have some problem about useage or some suggestion, welcome to create an ISSUE: https://github.com/penglongli/haproxy-keepalived/issues
 
 ## LICENSE
