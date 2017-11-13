@@ -25,7 +25,7 @@ mode_env() {
     # init haproxy
     /bin/bash -c /haproxy/haproxy_cfg_init.sh
 
-    # if $HAPROXY_ONLY is not true, init keepalived conf (default is null)
+    # if $HAPROXY_ONLY is not true, init keepalived conf ($HAPROXY_ONLY default is null)
     if [ "$HAPROXY_ONLY" != true ]; then
         # init keepalived
         /bin/bash -c /keepalived/init_keepalived_conf.sh
@@ -33,7 +33,7 @@ mode_env() {
 }
 
 # If mode is null or error value
-if [ ! -n "$MODE" or "$MODE" = "ENV"  ]; then
+if [ "$MODE" = "ENV"  ]; then
     eval mode_env
 fi
 
