@@ -14,7 +14,6 @@ This image has two-mode: `BIND`、`ENV`, default is `BIND`. Below will introduce
 
 ### BIND
 `BIND` mode can bind host's file with docker container's volume, such as HAProxy's and Keepalived's conf.
-
 We can use docker-compose to up the `haproxy-keepalived`.
 
 docker-compose.yml
@@ -38,8 +37,7 @@ Then we can use `http://${host_ip}:1080/stats` to lookup `HAProxy` service's sta
 
 ### ENV
 `ENV` mode can use docker environment variables to generate HAProxy's and Keepalived's conf.
-
-We use docker-compose to up the `haproxy-keepalived`.
+We can use docker-compose to up the `haproxy-keepalived`.
 
 docker-compose.yml
 ```yml
@@ -76,12 +74,12 @@ services:
             server server2 192.168.0.22:5002 maxconn 300 check
 ```
 From above, we add some envs rather than use docker volumes. Below is the meaning of above environment variables:
-- KEEPALIVED_STATE: Start-up default state
-- KEEPALIVED_INTERFACE: Keepalived Binding interface
-- KEEPALIVED_PRIORITY: Keepalived node priority
-- KEEPALIVED_V_ROUTER_ID: String identifying router
-- KEEPALIVED_VIP: Virtual ip
-- haproxy_item1: haproxy's item, can haproxy_item2、haproxy_item3、haproxy_item4, for custom your own haproxy-conf
+- `KEEPALIVED_STATE`: Start-up default state
+- `KEEPALIVED_INTERFACE`: Keepalived Binding interface
+- `KEEPALIVED_PRIORITY`: Keepalived node priority
+- `KEEPALIVED_V_ROUTER_ID`: String identifying router
+- `KEEPALIVED_VIP`: Virtual ip
+- `haproxy_item1`: haproxy's item, can haproxy_item2、haproxy_item3、haproxy_item4, for custom your own haproxy-conf
 
 ## Extend
 In this image, it extends a feature. If you want to use HAProxy only rather than `haproxy & keepalived`, you can set `HAPROXY_ONLY=true` in docker env.
