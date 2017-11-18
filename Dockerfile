@@ -28,3 +28,6 @@ RUN chmod +x /keepalived/init_keepalived_conf.sh
 
 # Override haproxy's entrypoint
 ENTRYPOINT ["/docker-entrypoint-override.sh"]
+
+# CMD
+CMD ["haproxy", "-f", "/usr/local/etc/haproxy/haproxy.cfg"]
