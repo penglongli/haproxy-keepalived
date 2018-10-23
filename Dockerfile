@@ -2,9 +2,7 @@ FROM haproxy:1.7-alpine
 
 ARG KEEPALIVED_VERSION=1.3.9
 
-COPY docker-entrypoint.sh /
 COPY start.sh /
-COPY haproxy/haproxy_cfg_init.sh /haproxy/
 
 RUN apk add wget gcc libc-dev libnl-dev openssl openssl-dev libnfnetlink-dev make linux-headers \
 # install keepalived

@@ -64,8 +64,10 @@ start_haproxy() {
     echo "[INFO] HAProxy started."
 }
 
-start_keepalived
-start_haproxy &
+start_keepalived  &
+start_haproxy  &
+
+sleep 20
 
 # while-loop to ensure haproxy & keepalived health.
 while true; do
