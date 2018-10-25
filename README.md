@@ -2,6 +2,8 @@
 
 HAProxy with Keepalived base on Docker(**latest**)
 
+With `start.sh`, added graceful shutdown with it.
+
 ## Usage ([DockerHub](https://hub.docker.com/r/pelin/haproxy-keepalived/))
 
 This image use host config file, and then run it:
@@ -13,6 +15,7 @@ docker run -it -d --net=host --privileged \
     --name haproxy-keepalived \
     pelin/haproxy-keepalived
 ```
+
 
 ## Example
 
@@ -74,6 +77,8 @@ docker run -it -d --net=host --privileged \
 ```
 
 You can use `docker logs -f haproxy-keepalived` to look.
+
+After start the first node, you can change `keepalived.conf` to start other nodes.
 
 ## Discuss
 If you have some problem about useage or some suggestion, welcome to create an ISSUE
