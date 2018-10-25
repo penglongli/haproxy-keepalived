@@ -1,5 +1,4 @@
 #!/bin/sh
-set -e
 
 # graceful shutdown
 trap "stop; exit 0;" SIGTERM SIGINT
@@ -32,13 +31,13 @@ start_keepalived() {
         sleep 5
 
         k_pid=$(pidof keepalived)
-        if [ -n "$k_id" ]; then
+        if [ -n $k_id ]; then
             break
         fi
 
-        if [ ${count} > 3 ]; then
-            echo "[Error] Keepalived start failed! Exit -1."
-            exit -1
+        if [ ${count} -gt 3 ]; then
+            echo "[Error] Keepalived start failed! Exit 1."
+            exit 1
         fi
         
         # if failed, kill vrrp.pid & keepliaved.pid
@@ -61,7 +60,7 @@ HAPROXY_LAUNCH="/usr/local/sbin/haproxy -p /run/haproxy.pid -db -f /usr/local/et
 # start haproxy
 start_haproxy() {
     echo "[INFO] HAProxy is starting."
-    eval ${HAPROXY_LAUNCH}
+    eval ${HAPROXY_LAUNCH} &
     echo "[INFO] HAProxy started."
 }
 
@@ -81,4 +80,4 @@ while true; do
     sleep 10
 done
 
-exit -1;
+exit 1;

@@ -1,91 +1,82 @@
 # haproxy-keepalived
-> If you want to use this image, you had better learned some of Docker、HAProxy、Keepalived, perhaps some Bash shell knowledge.
 
-## Introduction
-Glad you can see this repo. If you are looking for an image that combine HAProxy and Keepalived, this repo can help you archieve this goal. 
+HAProxy with Keepalived base on Docker(**latest**)
 
-`HAProxy` is used to setup a Load Balancer for TCP/HTTP applications. And `Keepalived` provides the characteristic of High-Availability for our `HAProxy` service.
+## Usage ([DockerHub](https://hub.docker.com/r/pelin/haproxy-keepalived/))
 
-Below link is the `haproxy-keepalived` image in docker-hub:
-- [pelin/haproxy-keepalived](https://hub.docker.com/r/pelin/haproxy-keepalived/)
+This image use host config file, and then run it:
 
-## Useage
-This image has two-mode: `BIND`、`ENV`, default is `BIND`. Below will introduce the difference between the two modes, and how they are used.
-
-### BIND
-`BIND` mode can bind host's file with docker container's volume, such as HAProxy's and Keepalived's conf.
-We can use docker-compose to up the `haproxy-keepalived`.
-
-docker-compose.yml
-```yml
-version: '3'
-services:
-
-  haproxy-keepalived:
-    image: "pelin/haproxy-keepalived"
-    privileged: true
-    network_mode: host
-    restart: always
-    volumes:
-      - /data/keepalived.conf:/etc/keepalived/keepalived.conf
-      - /data/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
-    environment:
-      MODE: "BIND"
+```bash
+docker run -it -d --net=host --privileged \
+    -v ${HAPROXY_CONFIG_FILE}:/usr/local/etc/haproxy/haproxy.cfg \
+    -v ${KEEPALIVED_CONFIG_FILE}:/etc/keepalived/keepalived.conf \
+    --name haproxy-keepalived \
+    pelin/haproxy-keepalived
 ```
-Then we can use `http://${host_ip}:1080/stats` to lookup `HAProxy` service's status.
-(Port `1080` can see /haproxy/template.cfg)
 
-### ENV
-`ENV` mode can use docker environment variables to generate HAProxy's and Keepalived's conf.
-We can use docker-compose to up the `haproxy-keepalived`.
+## Example
 
-docker-compose.yml
-```yml
-version: '3'
-services:
-
-  haproxy-keepalived:
-    image: "pelin/haproxy-keepalived"
-    privileged: true
-    network_mode: host
-    restart: always
-    environment:
-      MODE: "ENV"
-      KEEPALIVED_STATE: "MASTER"
-      KEEPALIVED_INTERFACE: "ens18"
-      KEEPALIVED_PRIORITY: "105"
-      KEEPALIVED_V_ROUTER_ID: "40"
-      KEEPALIVED_VIP: "192.168.0.40"
-      haproxy_item1: |-
-        listen app-1
-            bind *:4000
-            mode http
-            maxconn 300
-            balance roundrobin
-            server server1 192.168.0.21:4001 maxconn 300 check
-            server server2 192.168.0.22:4002 maxconn 300 check
-      haproxy_item2: |-
-        listen app-2
-            bind *:5000
-            mode http
-            maxconn 300
-            balance roundrobin
-            server server1 192.168.0.21:5001 maxconn 300 check
-            server server2 192.168.0.22:5002 maxconn 300 check
+haproxy.cfg:
 ```
-From above, we add some envs rather than use docker volumes. Below is the meaning of above environment variables:
-- `KEEPALIVED_STATE`: Start-up default state
-- `KEEPALIVED_INTERFACE`: Keepalived Binding interface
-- `KEEPALIVED_PRIORITY`: Keepalived node priority
-- `KEEPALIVED_V_ROUTER_ID`: String identifying router
-- `KEEPALIVED_VIP`: Virtual ip
-- `haproxy_item1`: haproxy's item, can haproxy_item2、haproxy_item3、haproxy_item4, for custom your own haproxy-conf
+global
+    daemon
+    maxconn 30000
 
-## Extend
-In this image, it extends a feature. If you want to use HAProxy only rather than `haproxy & keepalived`, you can set `HAPROXY_ONLY=true` in docker env.
+defaults
+    log global
+    option tcplog
+    maxconn 30000
+    timeout connect 30000
+    timeout client 1800000
+    timeout server 1800000
+    timeout check 1000
+
+listen stats
+    bind *:1080
+    mode http
+    stats refresh 30s
+    stats uri /stats
+```
+
+keepalived.conf
+```
+vrrp_script chk_haproxy {
+    script "killall -0 haproxy"
+    interval 2
+}
+
+vrrp_instance VI_1 {
+    state MASTER                # keepalived state
+    interface eth0              # replace this with your interface
+    virtual_router_id 40        
+    priority 105
+    track_interface {
+        eth0                    # replace this with your interface
+    }
+    virtual_ipaddress {
+        10.214.67.231           # replace this with your virtual IP
+    }
+    track_script {
+        chk_haproxy
+    }
+    nopreempt
+}
+
+```
+
+And then run it:
+```bash
+docker run -it -d --net=host --privileged \
+    -v /data/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg \
+    -v /data/keepalived.conf:/etc/keepalived/keepalived.conf \
+    --name haproxy-keepalived \
+    pelin/haproxy-keepalived
+```
+
+You can use `docker logs -f haproxy-keepalived` to look.
 
 ## Discuss
-If you have some problem about useage or some suggestion, welcome to create an ISSUE: https://github.com/penglongli/haproxy-keepalived/issues
+If you have some problem about useage or some suggestion, welcome to create an ISSUE
 
 ## LICENSE
 Based on [MIT LICENSE](https://github.com/penglongli/haproxy-keepalived/blob/master/LICENSE)
