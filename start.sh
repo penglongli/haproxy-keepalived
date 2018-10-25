@@ -26,10 +26,10 @@ count=1
 # start keepalived
 start_keepalived() {
     echo "[INFO] Keepalived is starting."
-    eval ${KEEPALIVED_LAUNCH}
+    eval ${KEEPALIVED_LAUNCH} &
     while true; do
         # wait keepalived started
-        sleep 3
+        sleep 5
 
         k_pid=$(pidof keepalived)
         if [ -n "$k_id" ]; then
@@ -44,6 +44,7 @@ start_keepalived() {
         # if failed, kill vrrp.pid & keepliaved.pid
         stop_keepalived
         echo "[Warning] Keepalived start failed, attempting restart(${count})..."
+        eval ${KEEPALIVED_LAUNCH} &
         count++
     done
 
@@ -64,10 +65,10 @@ start_haproxy() {
     echo "[INFO] HAProxy started."
 }
 
-start_keepalived  &
+start_keepalived
 start_haproxy  &
 
-sleep 20
+sleep 10
 
 # while-loop to ensure haproxy & keepalived health.
 while true; do
