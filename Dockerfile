@@ -1,33 +1,16 @@
-FROM haproxy:1.7.9
+FROM haproxy:1.7-alpine
 
-RUN apt-get update -y && apt-get upgrade -y
-RUN apt-get install -y gettext
+ARG KEEPALIVED_VERSION=1.3.9
 
+COPY start.sh /
+
+RUN apk add wget gcc libc-dev libnl-dev openssl openssl-dev libnfnetlink-dev make linux-headers \
 # install keepalived
-RUN mkdir -p /data/keepalived && cd /data && apt-get install -y wget \
-    && wget http://www.keepalived.org/software/keepalived-1.3.9.tar.gz && tar xf keepalived-1.3.9.tar.gz -C keepalived --strip-components 1 \
-    && cd keepalived && apt-get install -y gcc && apt-get install -y libssl-dev && apt-get -y install libpopt-dev \
-    && ./configure && apt-get install -y make && make && make install
+    && wget -O /tmp/keepalived.tar.gz "http://www.keepalived.org/software/keepalived-${KEEPALIVED_VERSION}.tar.gz" \
+    && mkdir -p /tmp/keepalived && tar -xf /tmp/keepalived.tar.gz -C /tmp/keepalived --strip-components 1 \
+    && cd /tmp/keepalived && ./configure && make && make install
 
-# entrypoint
-COPY docker-entrypoint-override.sh /
-RUN chmod +x /docker-entrypoint-override.sh
+# override haproxy's entrypoint
+ENTRYPOINT []
 
-# haproxy
-COPY haproxy/haproxy_cfg_init.sh /haproxy/
-COPY haproxy/template.cfg /haproxy/
-
-RUN chmod +x /haproxy/haproxy_cfg_init.sh
-
-# keepalived
-COPY keepalived/keepalived_template.conf /keepalived/
-COPY keepalived/init_keepalived_conf.sh /keepalived/
-COPY keepalived/start_keepalived.sh /
-
-RUN chmod +x /keepalived/init_keepalived_conf.sh
-
-# Override haproxy's entrypoint
-ENTRYPOINT ["/docker-entrypoint-override.sh"]
-
-# CMD
-CMD ["haproxy", "-f", "/usr/local/etc/haproxy/haproxy.cfg"]
+CMD ["/start.sh"]
