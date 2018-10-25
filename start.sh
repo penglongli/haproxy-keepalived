@@ -64,8 +64,8 @@ start_haproxy() {
     echo "[INFO] HAProxy started."
 }
 
+start_haproxy
 start_keepalived
-start_haproxy  &
 
 sleep 10
 

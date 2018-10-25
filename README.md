@@ -44,15 +44,18 @@ listen stats
 keepalived.conf
 ```
 vrrp_script chk_haproxy {
-    script "killall -0 haproxy"
+    script "/usr/local/bin/chk_haproxy.sh"
     interval 2
+    weight 2
+    rise 2
+    fall 2
 }
 
 vrrp_instance VI_1 {
     state MASTER                # keepalived state
     interface eth0              # replace this with your interface
     virtual_router_id 40        
-    priority 105
+    priority 110
     track_interface {
         eth0                    # replace this with your interface
     }

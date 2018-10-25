@@ -3,6 +3,7 @@ FROM haproxy:1.7-alpine
 ARG KEEPALIVED_VERSION=1.3.9
 
 COPY start.sh /
+COPY chk_haproxy.sh /usr/local/bin/ 
 
 RUN apk add wget gcc libc-dev libnl-dev openssl openssl-dev libnfnetlink-dev make linux-headers \
 # install keepalived
