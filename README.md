@@ -2,7 +2,11 @@
 
 HAProxy with Keepalived base on Docker(Old version look `old` branch).
 
-With `start.sh`, added graceful shutdown with it. And haproxy will print log with rsyslog.
+**Feature:**
+
+- **graceful_shutdown**: with `start.sh`, added graceful shutdown with it.
+
+- **haproxy_log**: haproxy will print log with rsyslog to `/var/log/haproxy.log`.
 
 ## Usage ([DockerHub](https://hub.docker.com/r/pelin/haproxy-keepalived/))
 
