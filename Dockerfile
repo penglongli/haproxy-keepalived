@@ -12,6 +12,9 @@ RUN apk add wget gcc libc-dev libnl-dev openssl openssl-dev libnfnetlink-dev mak
     && cd /tmp/keepalived && ./configure && make && make install \
     && cd /tmp && rm -rf /tmp/*
 
+# override haproxy's SIGUSR1 
+STOPSIGNAL SIGTERM 
+
 # override haproxy's entrypoint
 ENTRYPOINT []
 
