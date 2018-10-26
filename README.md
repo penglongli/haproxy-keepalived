@@ -24,6 +24,7 @@ haproxy.cfg:
 global
     daemon
     maxconn 30000
+    log 127.0.0.1 local0 debug
 
 defaults
     log global
@@ -33,6 +34,7 @@ defaults
     timeout client 1800000
     timeout server 1800000
     timeout check 1000
+    log-format %ci\ [id=%ID]\ [%t]\ %f\ %b/%s\ %Tq/%Tw/%Tc/%Tr/%Tt\ %ST\ %B\ %CC\ %CS\ %tsc\ %ac/%fc/%bc/%sc/%rc\ %sq/%bq\ {%hrl}\ {%hsl}\ %{+Q}r
 
 listen stats
     bind *:1080
