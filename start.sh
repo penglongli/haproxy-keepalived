@@ -12,8 +12,8 @@ stop_process() {
     stop_keepalived
 }
 
-KEEPALIVED_LAUNCH="keepalived --dont-fork --dump-conf --log-console --log-detail --log-facility 7 --vrrp -f /etc/keepalived/keepalived.conf"
 # start keepalived
+KEEPALIVED_LAUNCH="keepalived --dont-fork --dump-conf --log-console --log-detail --log-facility 7 --vrrp -f /etc/keepalived/keepalived.conf"
 start_keepalived() {
     echo "[INFO] Keepalived is starting."
     eval ${KEEPALIVED_LAUNCH} &
@@ -34,7 +34,7 @@ stop_keepalived() {
         fi
        
         if [ ${count} -gt 5 ]; then
-            echo "[Error] Keepalived stop failed."
+            echo "[ERROR] Keepalived stop failed."
             return
         fi
         kill -TERM $k_pid > /dev/null 2>&1
@@ -44,8 +44,8 @@ stop_keepalived() {
 #    kill -TERM $(cat /var/run/keepalived.pid)
 }
 
-HAPROXY_LAUNCH="/usr/local/sbin/haproxy -p /run/haproxy.pid -db -f /usr/local/etc/haproxy/haproxy.cfg -Ds"
 # start haproxy
+HAPROXY_LAUNCH="/usr/local/sbin/haproxy -p /run/haproxy.pid -db -f /usr/local/etc/haproxy/haproxy.cfg -Ds"
 start_haproxy() {
     echo "[INFO] HAProxy is starting."
     eval ${HAPROXY_LAUNCH} &
@@ -58,6 +58,18 @@ stop_haproxy() {
     echo "[INFO] HAProxy terminated."
 }
 
+# start rsyslog
+start_rsyslog() {
+    rsyslogd
+}
+
+# stop rsyslog
+stop_rsyslog() {
+    kill -s SIGUSR1 $(pidof rsyslogd) > /dev/null 2>&1
+    echo "[INFO] Rsyslogd terminated."
+}
+
+start_rsyslog
 start_haproxy
 start_keepalived
 
@@ -67,10 +79,16 @@ sleep 10
 while true; do
     h_pid=$(pidof haproxy)
     k_pid=$(pidof keepalived)
+    r_pid=$(pidof rsyslogd)
 
-    if [ ! -n "$h_pid" ] || [ ! -n "$k_pid" ]; then
+    # rsyslog crashed, restart it.
+    if [ ! -n "$r_pid" ]; then
+        start_rsyslog
+    fi
+
+    if [ ! -n "$k_pid" ]; then
         # when one crash, graceful shutdown
-        echo "[Error] one process crashed, will shutdown."
+        echo "[ERROR] Keepalived crashed, shutdown all process, exit 1"
         stop_process
         break
     fi

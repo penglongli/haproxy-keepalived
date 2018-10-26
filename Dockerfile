@@ -1,12 +1,14 @@
 FROM haproxy:1.7-alpine
 
+LABEL maintainer="Peling <penglong95.li@gmail.com>"
+
 ARG KEEPALIVED_VERSION=1.3.9
 
 COPY start.sh /
-COPY locale.md /
-COPY chk_haproxy.sh /usr/local/bin/ 
+COPY script/locale.md /
+COPY script/chk_haproxy.sh /usr/local/bin/ 
 
-RUN apk add wget gcc libc-dev libnl-dev openssl openssl-dev libnfnetlink-dev make linux-headers \
+RUN apk add wget gcc libc-dev libnl-dev openssl openssl-dev libnfnetlink-dev make linux-headers rsyslog \
 # install keepalived
     && wget -O /tmp/keepalived.tar.gz "http://www.keepalived.org/software/keepalived-${KEEPALIVED_VERSION}.tar.gz" \
     && mkdir -p /tmp/keepalived && tar -xf /tmp/keepalived.tar.gz -C /tmp/keepalived --strip-components 1 \
@@ -19,7 +21,11 @@ RUN apk add wget gcc libc-dev libnl-dev openssl openssl-dev libnfnetlink-dev mak
     && wget -q -P /tmp https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.28-r0/glibc-i18n-2.28-r0.apk \
     && apk add /tmp/glibc-2.28-r0.apk /tmp/glibc-bin-2.28-r0.apk /tmp/glibc-i18n-2.28-r0.apk \
     && cat /locale.md | xargs -i /usr/glibc-compat/bin/localedef -i {} -f UTF-8 {}.UTF-8 \
+# rsyslog, refer to: https://github.com/mminks/haproxy-docker-logging/blob/master/Dockerfile
+    && mkdir -p /etc/rsyslog.d && touch /var/log/haproxy.log \
     && cd /tmp && rm -rf /tmp/*
+
+COPY script/rsyslog.conf /etc/rsyslog.d/
 
 # override haproxy's SIGUSR1 
 STOPSIGNAL SIGTERM 
