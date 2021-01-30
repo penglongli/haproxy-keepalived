@@ -1,7 +1,5 @@
 # haproxy-keepalived [v1.0.0]
 
-[中文](README_zh.md)
-
 > Refactored, make it great again. And add support for Kubernetes
 
 * [For Docker](#for-docker)
@@ -23,9 +21,9 @@ DockerHub: https://hub.docker.com/r/pelin/haproxy-keepalived/
 
 ## For Docker
 
-For Docker, you need to set HAProxy and Keepalived config file in host.
+如果仅使用 Docker 来做部署，需要将 HAProxy 和 Keepalived 的配置文件存放到宿主机上。
 
-Below is an example, you should change `Keepalived.conf` for yourself.
+下边是一个例子，用户需要修改 `keepalived.conf` 来适配自己的环境。
 
 ``` bash
 ~$ cat /root/haproxy-keepalived/haproxy/haproxy.cfg
@@ -60,17 +58,18 @@ listen stats
 ~$ cat /root/haproxy-keepalived/keepalived/keepalived.conf
 vrrp_instance VI_1 {
     state MASTER                 # Keepalived state.
-    interface eth0               # Please replace this interface for yourself
-    virtual_router_id 40         # Please replace this id for yourself
-    priority 110                 # Please replace this value for yourself
+    interface eth0               # 将此处修改为个人主机的网卡
+    virtual_router_id 40         # 修改此处的 router_id
+    priority 110                 # 修改此处的 priority
     virtual_ipaddress {
-        172.20.10.16             # Please replace this VIP for yourself
+        172.20.10.16             # 修改此处的虚拟 IP
     }
     nopreempt
 }
 ``` 
 
-And then, you can run a container with Docker
+在如上配置文件准备好之后，通过下述命令即可拉起来 haproxy-keepalived.
+
 ```bash
 docker run -it -d --name haproxy-keepalived --net=host --privileged \
     -v /root/haproxy-keepalived/haproxy/:/usr/local/etc/haproxy/ \
@@ -78,19 +77,22 @@ docker run -it -d --name haproxy-keepalived --net=host --privileged \
     pelin/haproxy-keepalived:v1.0.0
 ```
 
-You can use `docker logs -f haproxy-keepalived` to see if any errors has occurred.
+在拉起来后，可以通过 `docker logs` 来查看日志是否出现错误。如果 HAProxy 或 Keepalived 进程挂掉，则容器会自动结束。
 
-If everything is ok, you can ping `172.20.10.16`.
+如果一切正常，此时虚拟 IP 是可以 PING 通的。
 
-After start the first node, you can change keepalived.conf and start another node.
+在第一个节点起来后，就可以修改 Keepalived 的配置，然后去启动后续其它节点。
 
 ## For Kubernetes
 
-**If you want it for Kubernetes, you should confirm that the Keepalived config is different between nodes.** 
+**如果使用 Kubernetes，需要保证每一个 Pod 中的 Keepalived 配置是不相同的**
 
-There is an example in [deploy/kubernetes](deploy/kubernetes)
+使用 Kubernetes 的一个示例： [deploy/kubernetes](deploy/kubernetes)
 
-You can see the data of `keepalived-conf` ConfigMap is dynamic with NODE_NAME
+在示例中，可以看到 keepalived-conf 这个 ConfigMap 里边的 Data 名称是动态的（使用 NODE_NAME 来动态调整）
+
+如下示例，keepalived.conf-localhost.localdomain 名称是：keepalived.conf-${NODE_NAME} 
+
 ```bash
 ---
 ...
@@ -102,7 +104,8 @@ data:
 ...
 ```
 
-In `daemonset.yaml`, the volumeMount subPath is dynamic with NODE_NAME too.
+在 `daemonset.yaml` 中，在挂载 Keepalived 配置的时候，同样需要使用 NODE_NAME 来做动态调整
+
 ```bash
 volumeMounts:
   - name: keepalivedconf
@@ -112,20 +115,24 @@ volumeMounts:
 
 ## Dynamic Reload HAProxy
 
-Users can reload HAProxy in trhee ways as below
+在 Docker 或者 Kubernetes 中，挂载的 HAProxy 配置是通过挂载映射进容器的。
+
+当对配置做了修改后，此处可以通过 3 种方式来做动态更新
 
 ### OS Signal
 
-We can change HAProxy config with ConfigMap(Kubernetes) or HostFile(Docker)
+可以使用如下方式来刷新：
 
-If config is changed, user can use the below command to reload HAProxy:
 ```bash
 docker kill -s HUP haproxy-keepalived
 ```
 
+容器会接收 `SIGHUP` 信号，并去处理动态更新
+
 ### Reload Command
 
-Exec to the container, and then reload.
+通过 exec 进入容器，使用 `haproxy-keepalived reload` 命令来刷新配置
+
 ```bash
 [root@localhost ~]# kubectl exec -it haproxy-keepalived-6zrjz sh
 / # /haproxy-keepalived reload
@@ -135,16 +142,14 @@ I0122 23:38:40.769526      36 server.go:79] HAProxy Reloaded.
 
 ### Kill Signal
 
-Exec to the container, and execute the velow command:
+用户也可以在 exec 进入容器后，通过如下命令来刷新配置
 ```bash
 kill -SIGUSR2 $(pidof haproxy)
 ```
 
 ## Logging
 
-The HAProxy log path: /var/log/haproxy.log
-
-
+容器中使用了 rsyslogd，所有 HAProxy 的日志可以在 `/var/log/haproxy.log` 中查看。
 
 ## Discuss
 If you have some problem about useage or some suggestion, welcome to create an ISSUE
