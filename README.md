@@ -8,7 +8,8 @@
     * [OS Signal](#os-signal)
     * [Reload Command](#reload-command)
     * [Kill Signal](#kill-signal)
-* [Logging](#help-improving-the-documents)
+* [Logging](#logging)
+* [License](#license)
 
 HAProxy with Keepalived for Docker and Kubernetes
 
