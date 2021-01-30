@@ -1,30 +1,31 @@
-# haproxy-keepalived [latest]
+# haproxy-keepalived [v1.0.0]
 
-HAProxy with Keepalived base on Docker(Old version look `old` branch).
+> Refactored, make it great again. And add support for Kubernetes
 
-**Feature:**
+* [For Docker](#for-docker)
+* [For Kubernetes](#for-kubernetes)
+* [Dynamic Reload HAProxy](#dynamic-reload-haproxy)
+    * [OS Signal](#os-signal)
+    * [Reload Command](#reload-command)
+    * [Kill Signal](#kill-signal)
+* [Logging](#help-improving-the-documents)
 
-- **graceful_shutdown**: with `start.sh`, added graceful shutdown with it.
+HAProxy with Keepalived for Docker and Kubernetes
 
-- **haproxy_log**: haproxy will print log with rsyslog to `/var/log/haproxy.log`.
+DockerHub: https://hub.docker.com/r/pelin/haproxy-keepalived/
 
-## Usage ([DockerHub](https://hub.docker.com/r/pelin/haproxy-keepalived/))
+| Version | HAProxy | Keepalived |
+| ------- | ------- | ---------- |
+| v1.0.0  | v2.3.4  | v1.3.9     |
 
-This image use host config file, and then run it:
+## For Docker
 
-```bash
-docker run -it -d --net=host --privileged \
-    -v ${HAPROXY_CONFIG_FILE}:/usr/local/etc/haproxy/haproxy.cfg \
-    -v ${KEEPALIVED_CONFIG_FILE}:/etc/keepalived/keepalived.conf \
-    --name haproxy-keepalived \
-    pelin/haproxy-keepalived
-```
+For Docker, you need to set HAProxy and Keepalived config file in host.
 
+Below is an example, you should change `Keepalived.conf` for yourself.
 
-## Example
-
-haproxy.cfg:
-```
+``` bash
+~$ cat /root/haproxy-keepalived/haproxy/haproxy.cfg
 global
     daemon
     maxconn 30000
@@ -40,54 +41,101 @@ defaults
     timeout check 1000
     log-format %ci\ [id=%ID]\ [%t]\ %f\ %b/%s\ %Tq/%Tw/%Tc/%Tr/%Tt\ %ST\ %B\ %CC\ %CS\ %tsc\ %ac/%fc/%bc/%sc/%rc\ %sq/%bq\ {%hrl}\ {%hsl}\ %{+Q}r
 
+listen test
+    bind *:6666
+    mode http
+    maxconn 10000
+    balance roundrobin
+    server server1 127.0.0.1:1080 maxconn 10000 check
+
 listen stats
     bind *:1080
     mode http
     stats refresh 30s
     stats uri /stats
-```
 
-keepalived.conf
-```
-vrrp_script chk_haproxy {
-    script "/usr/local/bin/chk_haproxy.sh"
-    interval 2
-    weight 2
-    rise 2
-    fall 2
-}
-
+~$ cat /root/haproxy-keepalived/keepalived/keepalived.conf
 vrrp_instance VI_1 {
-    state MASTER                # keepalived state
-    interface eth0              # replace this with your interface
-    virtual_router_id 40        
-    priority 110
-    track_interface {
-        eth0                    # replace this with your interface
-    }
+    state MASTER                 # Keepalived state.
+    interface eth0               # Please replace this interface for yourself
+    virtual_router_id 40         # Please replace this id for yourself
+    priority 110                 # Please replace this value for yourself
     virtual_ipaddress {
-        10.214.67.231           # replace this with your virtual IP
-    }
-    track_script {
-        chk_haproxy
+        172.20.10.16             # Please replace this VIP for yourself
     }
     nopreempt
 }
+``` 
 
-```
-
-And then run it:
+And then, you can run a container with Docker
 ```bash
-docker run -it -d --net=host --privileged \
-    -v /data/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg \
-    -v /data/keepalived.conf:/etc/keepalived/keepalived.conf \
-    --name haproxy-keepalived \
-    pelin/haproxy-keepalived
+docker run -it -d --name haproxy-keepalived --net=host --privileged \
+    -v /root/haproxy-keepalived/haproxy/:/usr/local/etc/haproxy/ \
+    -v /root/haproxy-keepalived/keepalived/:/etc/keepalived/ \
+    pelin/haproxy-keepalived:v1.0.0
 ```
 
-You can use `docker logs -f haproxy-keepalived` to look.
+You can use `docker logs -f haproxy-keepalived` to see if any errors has occurred.
 
-After start the first node, you can change `keepalived.conf` to start other nodes.
+If everything is ok, you can ping `172.20.10.16`.
+
+After start the first node, you can change keepalived.conf and start another node.
+
+## For Kubernetes
+
+**If you want it for Kubernetes, you should confirm that the Keepalived config is different between nodes.** 
+
+There is an example in [deploy/kubernetes](deploy/kubernetes)
+
+You can see the data of `keepalived-conf` ConfigMap is dynamic with NODE_NAME
+```bash
+---
+...
+metadata:
+  name: keepalived-conf
+  namespace: default
+data:
+  keepalived.conf-localhost.localdomain: |    # The name is dynamic with NODE_NAME
+...
+```
+
+In `daemonset.yaml`, the volumeMount subPath is dynamic with NODE_NAME too.
+```bash
+volumeMounts:
+  - name: keepalivedconf
+    mountPath: /etc/keepalived/keepalived.conf
+    subPathExpr: keepalived.conf-$(NODE_NAME)        # The subpath is dynamic
+```
+
+## Dynamic Reload HAProxy
+
+Users can reload HAProxy in trhee ways as below
+
+### OS Signal
+
+You can use `docker kill -s HUP haproxy-keepalived` to reload HAProxy, if config is changed.
+
+The container will handle `SIGHUP` signal.
+
+### Reload Command
+
+Exec to the container, and then reload.
+```bash
+[root@localhost ~]# kubectl exec -it haproxy-keepalived-6zrjz sh
+/ # /haproxy-keepalived reload
+I0122 23:38:40.769526      36 server.go:79] HAProxy Reloaded.
+/ #
+```
+
+### Kill Signal
+
+Also you can exec into contaienr, and exec `kill -SIGUSR2 $(pidof haproxy)` to reload.
+
+## Logging
+
+The HAProxy log path: /var/log/haproxy.log
+
+
 
 ## Discuss
 If you have some problem about useage or some suggestion, welcome to create an ISSUE

@@ -1,0 +1,54 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: haproxy-conf
+  namespace: default
+data:
+  haproxy.cfg: |
+    global
+        daemon
+        maxconn 30000
+        log 127.0.0.1 local0 debug
+
+    defaults
+        log global
+        option tcplog
+        maxconn 30000
+        timeout connect 30000
+        timeout client 1800000
+        timeout server 1800000
+        timeout check 1000
+        log-format %ci\ [id=%ID]\ [%t]\ %f\ %b/%s\ %Tq/%Tw/%Tc/%Tr/%Tt\ %ST\ %B\ %CC\ %CS\ %tsc\ %ac/%fc/%bc/%sc/%rc\ %sq/%bq\ {%hrl}\ {%hsl}\ %{+Q}r
+
+    listen test
+        bind *:6666
+        mode http
+        maxconn 10000
+        balance roundrobin
+        server server1 127.0.0.1:1080 maxconn 10000 check
+
+    listen stats
+        bind *:1080
+        mode http
+        stats refresh 30s
+        stats uri /stats
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keepalived-conf
+  namespace: default
+data:
+  keepalived.conf-localhost.localdomain: |
+    vrrp_instance VI_1 {
+        state MASTER
+        interface ens37
+        virtual_router_id 40
+        priority 110
+        virtual_ipaddress {
+            172.20.10.16
+        }
+        nopreempt
+    }

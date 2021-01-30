@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: haproxy-keepalived
+  namespace: default
+  labels:
+    k8s-app: haproxy-keepalived
+spec:
+  selector:
+    matchLabels:
+      name: haproxy-keepalived
+  template:
+    metadata:
+      labels:
+        name: haproxy-keepalived
+    spec:
+      containers:
+        - name: haproxy-keepalived
+          image: pelin/haproxy-keepalived:dev
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: IS_KUBERNETES
+              value: "TRUE"
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            - name: haproxyconf
+              mountPath: /usr/local/etc/haproxy
+            - name: keepalivedconf
+              mountPath: /etc/keepalived/keepalived.conf
+              subPathExpr: keepalived.conf-$(NODE_NAME)
+          securityContext:
+            privileged: true
+      volumes:
+        - name: haproxyconf
+          configMap:
+            name: haproxy-conf
+        - name: keepalivedconf
+          configMap:
+            name: keepalived-conf
+      hostNetwork: true
