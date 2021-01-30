@@ -19,8 +19,6 @@ spec:
           image: pelin/haproxy-keepalived:dev
           imagePullPolicy: IfNotPresent
           env:
-            - name: IS_KUBERNETES
-              value: "TRUE"
             - name: NODE_NAME
               valueFrom:
                 fieldRef:
